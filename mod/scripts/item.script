@@ -1,0 +1,75 @@
+--GPU base
+ItemBarterCreate("gpu");
+ItemSetName("gpu", "Graphics Card");
+ItemSetDescription("gpu" , "This GPU is the most powerful GPU ever made, bringing game-changing capabilities to gamers and creators. Tackle the most advanced models and most challenging creative workloads with unprecedented AI horsepower." );
+ItemSetWeight("gpu" , 2 );
+ItemSetPriceValue("gpu", 2000000);
+ItemSetStackLimit("gpu", 1);
+
+--gpu sprite
+SpriteLoad("gpu sprite","sprite/5090GPU.png",1,0,0,0);
+ItemSetSpriteInventory("gpu","gpu sprite");
+ItemSetSpriteIngame("gpu","gpu sprite");
+
+
+--Bitcoin base
+ItemBarterCreate("btc");
+ItemSetName("btc", "Bitcoin");
+ItemSetDescription("btc" , "A digital currency whose price updates at the time of mining and stays constant until the next cycle. Store it in a USB wallet to secure a stable exchange value." );
+ItemSetWeight("btc" , 0 );
+ItemSetPriceValue("btc", 100000);
+ItemSetStackLimit("btc", 1);
+
+--btc sprite
+SpriteLoad("btc sprite","sprite/btc.png",1,0,0,0);
+ItemSetSpriteInventory("btc","btc sprite");
+ItemSetSpriteIngame("btc","btc sprite");
+
+--Bitcoin usb base
+ItemBarterCreate("btc_usb");
+ItemSetName("btc_usb", "Bitcoin USB");
+ItemSetDescription("btc_usb" , "A secure USB device that stores 1 BTC at a fixed value. Once stored, the bitcoin's price will no longer fluctuate. Stability is ensured by the Bunker network.");
+ItemSetWeight("btc_usb" , 0.10 );
+ItemSetPriceValue("btc_usb", 250000);
+ItemSetStackLimit("btc_usb", 100);
+
+--btc sprite
+SpriteLoad("btc usb sprite","sprite/btc_usb.png",1,0,0,0);
+ItemSetSpriteInventory("btc_usb","btc usb sprite");
+ItemSetSpriteIngame("btc_usb","btc usb sprite");
+
+----------------------------------------
+
+
+-- loot system
+ChestAddSpecialItem("electronic_box","gpu",0.5);
+ChestAddSpecialItem("bandit_boss_valentin","gpu",1);
+ChestAddSpecialItem("killa","gpu",1);
+ChestAddSpecialItem("cabinet","gpu",0.1);
+ChestAddSpecialItem("bag","gpu",0.1);
+
+ChestAddSpecialItem("bandit_boss_valentin","btc",1.5);
+ChestAddSpecialItem("killa","btc",1.5);
+ChestAddSpecialItem("cabinet","btc",0.5);
+ChestAddSpecialItem("safe","btc",1);
+ChestAddSpecialItem("bag","btc",0.5);
+-- Trader add Items
+TraderAddItem( "bar", "gpu", 1, 0)
+
+-- GPU recipe
+CraftingRecipeCreate(CraftingType_Extras,Base_Module_None,0,[
+    ["wires",40],
+    ["power_outlet",20],
+    ["usb", 16],
+    ["cpu",16],
+    ["power_bank",8],
+    ["ram",8],
+    ["military_circuit",8],
+    ["ssd",8],
+    ["gameboy",10],
+    ["gamestation",10]
+],["gpu",1]);
+CraftingRecipeCreate(CraftingType_Extras,Base_Module_None,0,[
+    ["btc",1],
+    ["usb",1],
+],["btc_usb",1]);

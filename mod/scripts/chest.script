@@ -1,0 +1,46 @@
+-- Create Bitcoin chest fo hub
+ChestCreate("bitcoin_chest");
+
+-- Rename the Bitcoin chest
+ChestSetName("bitcoin_chest","Mined Bitcoin");
+
+-- Set the chest sound
+ChestSetSoundType("bitcoin_chest","safe");
+
+--Set Chest Sprite
+
+-- Set bitcoin_chest always revealed
+ChestSetAlwaysSeen("bitcoin_chest",true);
+ChestSetItemsDecay("bitcoin_chest", false);
+
+-- Adds a btc to bitcoin_chest item list
+
+ChestSetItemDropChance("bitcoin_chest",100,0,0,0);
+ChestAddItem("bitcoin_chest","btc","uncommon");
+-- Set the destroy when empty behavior
+ChestSetDestroyWhenEmpty("bitcoin_chest",false);
+ChestSetItemCount("bitcoin_chest",0,0);
+
+-- set Bitcoin chest Sprite for hub for each rig level
+SpriteLoad("rig chest 0","sprite/rig_chest_0.png",1,0,16,16);
+SpriteLoad("rig chest 1","sprite/rig_chest_1.png",1,0,16,16);
+SpriteLoad("rig chest 2","sprite/rig_chest_2.png",1,0,16,16);
+SpriteLoad("rig chest 3","sprite/rig_chest_3.png",1,0,16,16);
+SpriteLoad("rig chest 4","sprite/rig_chest_4.png",1,0,16,16);
+SpriteLoad("rig chest 5","sprite/rig_chest_5.png",1,0,16,16);
+SpriteLoad("rig chest 6","sprite/rig_chest_6.png",1,0,16,16);
+SpriteLoad("rig chest 7","sprite/rig_chest_7.png",1,0,16,16);
+SpriteLoad("rig chest 8","sprite/rig_chest_8.png",1,0,16,16);
+SpriteLoad("rig chest 9","sprite/rig_chest_9.png",1,0,16,16);
+SpriteLoad("rig chest 10","sprite/rig_chest_10.png",1,0,16,16);
+--Set Rig Chest Sprite when BTC is mined
+SpriteLoad("rig chest 1 btc","sprite/rig_chest_1_btc.png",1,0,16,16);
+SpriteLoad("rig chest 2 btc","sprite/rig_chest_2_btc.png",1,0,16,16);
+SpriteLoad("rig chest 3 btc","sprite/rig_chest_3_btc.png",1,0,16,16);
+SpriteLoad("rig chest 4 btc","sprite/rig_chest_4_btc.png",1,0,16,16);
+SpriteLoad("rig chest 5 btc","sprite/rig_chest_5_btc.png",1,0,16,16);
+SpriteLoad("rig chest 6 btc","sprite/rig_chest_6_btc.png",1,0,16,16);
+SpriteLoad("rig chest 7 btc","sprite/rig_chest_7_btc.png",1,0,16,16);
+SpriteLoad("rig chest 8 btc","sprite/rig_chest_8_btc.png",1,0,16,16);
+SpriteLoad("rig chest 9 btc","sprite/rig_chest_9_btc.png",1,0,16,16);
+SpriteLoad("rig chest 10 btc","sprite/rig_chest_10_btc.png",1,0,16,16);

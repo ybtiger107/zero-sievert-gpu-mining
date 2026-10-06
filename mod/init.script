@@ -1,0 +1,206 @@
+-- global & FileData Script
+if (global == undefined) {
+    global = {};
+}
+
+--Function
+--Reference from vending machine mod
+_ObjectGetAllInstances = func(arg){
+    let a_npcs = [];
+    with arg {
+        ArrayPush(a_npcs, self.id);
+    };
+    return a_npcs;
+}
+FindNpcInstance = func(npc_name){
+    let hub_npcs = _ObjectGetAllInstances(obj_npc_human_parent);
+    while (ArrayLength(hub_npcs) > 0){
+        let current_npc = ArrayFirst(hub_npcs)
+        if (current_npc.npc_name == npc_name){
+            return current_npc;
+        };
+        ArrayDelete(hub_npcs, 0, 1);
+    };
+}
+
+
+-- Pre Script
+ScriptExecute("scripts/item.script");
+ScriptExecute("scripts/rig.script");
+ScriptExecute("scripts/chest.script");
+
+
+-- Main Script
+EventAssignFunction("enter_hub",func() {
+    let time_btc = FileDataRead("Time BTC");
+    let rig_level = FileDataRead("Rig level");
+    let rig_made = FileDataRead("Rig made");
+    let rig_has = FileDataRead("Rig has");
+    let btc_price = FileDataRead("btc price");;
+    if (btc_price == undefined) {
+        btc_price = 100000;
+        FileDataWrite("btc price", btc_price);
+    }
+
+    let time_for_recap = 60*60*45;
+    if (time_btc != undefined and time_btc >= time_for_recap) {
+        rig_has = rig_level;
+        FileDataWrite("Rig has", rig_has);
+        FileDataWrite("Time BTC", 0);
+        --BTC Random price
+        btc_price = Round(RandomRange(100000, 400000));
+        FileDataWrite("btc price", btc_price);
+        ItemSetPriceValue("btc", FileDataRead("btc price"));
+    }
+    if (time_btc != undefined and time_btc < time_for_recap) {
+        rig_has = 0;
+        FileDataWrite("Rig has", rig_has);
+    }
+    if (rig_made == undefined) {
+        rig_made = false;
+        FileDataWrite("Rig made", rig_made);
+    }
+
+    --Rig made check
+    if (InventoryItemExists("miner_0") and rig_made == false) {
+        rig_made = true;
+        FileDataWrite("Rig made", rig_made);
+    }
+    if(rig_made == true) {
+        if (FileDataRead("Bitcoin NPC spawned") != undefined) {
+            FileDataWrite("Bitcoin NPC spawned", true);
+        }
+        if (FileDataRead("Bitcoin OBJ spawned") != undefined) {
+            FileDataWrite("Bitcoin OBJ spawned", true);
+        }
+    }
+});
+
+
+
+
+ObjectSetScript("obj_player","step_normal_event",func(_inst) {
+    --FileData Script
+    let rig_level = FileDataRead("Rig level");
+    let rig_made = FileDataRead("Rig made");
+    let time_btc = FileDataRead("Time BTC");
+    let time_btc_kill = FileDataRead("Time BTC kill");
+    let bitcoin_npc_spawned = FileDataRead("Bitcoin NPC spawned");
+    let bitcoin_obj_spawned = FileDataRead("Bitcoin OBJ spawned");
+    if (rig_level == undefined) {
+        rig_level = 0;
+        ChestSetItemCount("bitcoin_chest",rig_level,rig_level);
+        FileDataWrite("Rig level", rig_level);
+    }
+    if (rig_made == undefined) {
+        rig_made = false;
+        FileDataWrite("Rig made", rig_made);
+    }
+    if (time_btc == undefined) {
+        time_btc = 0;
+        FileDataWrite("Time BTC", time_btc);
+    }
+    if (time_btc_kill == undefined) {
+        time_btc_kill = 0;
+        FileDataWrite("Time BTC kill", time_btc_kill);
+    }
+    if (bitcoin_npc_spawned == undefined) {
+        bitcoin_npc_spawned = false;
+        FileDataWrite("Bitcoin NPC spawned", bitcoin_npc_spawned);
+    }
+    if (bitcoin_obj_spawned == undefined) {
+        bitcoin_obj_spawned = false;
+        FileDataWrite("Bitcoin OBJ spawned", bitcoin_obj_spawned);
+    }
+    --Rig Time flow
+    if (rig_level > 0) {
+        time_btc += 1;
+        FileDataWrite("Time BTC", time_btc);
+    }
+
+    --Rig level check
+    let level = 1;
+    while ( level <= 10 ){
+        let rig_name = "miner_" + String(level);
+        if (InventoryItemExists(rig_name)){
+            if(rig_level < level){
+                rig_level = Max(level,rig_level);
+                FileDataWrite("Rig level", rig_level);
+                ItemSetSpriteInventory("miner_" + String(FileDataRead("Rig level")-1),"rig " + String(FileDataRead("Rig level")-1));
+                ItemSetSpriteIngame("miner_" + String(FileDataRead("Rig level")-1),"rig " + String(FileDataRead("Rig level")-1));
+                break;
+            }
+        }
+        level += 1;
+    }
+
+    --BTC Npc spawn
+    if (rig_made== true) {
+        if( bitcoin_npc_spawned and FindNpcInstance("GPU Mining Rig") == undefined) {
+            NpcSpawn("bitcoin_npc", 320, 900);
+            bitcoin_npc_spawned = false;
+            FileDataWrite("Bitcoin NPC spawned", bitcoin_npc_spawned);
+        }
+        --BTC OBJ spawn
+        if (bitcoin_obj_spawned and !bitcoin_npc_spawned) {
+            ObjectSpawn("btc_obj", 320, 900);
+            bitcoin_obj_spawned = false;
+            FileDataWrite("Bitcoin OBJ spawned", bitcoin_obj_spawned);
+        }
+    }
+    --apply btc price
+    if (btc_price != undefined) {
+        ItemSetPriceValue("btc", btc_price);
+    }
+
+});
+
+--NPC Setting
+NpcCopy("bitcoin_npc", "trader_faction1");
+NpcSetName("bitcoin_npc", "GPU Mining Rig");
+NpcSetChestDropped("bitcoin_npc", "bitcoin_chest");
+--Btc Npc instance
+
+ObjectCreate("btc_obj")
+ObjectSetScript("btc_obj","create_event",func(_inst) {
+    let rig_has = FileDataRead("Rig has");
+    _inst.x = 320;
+    _inst.y = 900;
+    _inst.depth = -910;
+    _inst.completed = false;
+    let bitcoin_npc_spawned = FileDataRead("Bitcoin NPC spawned");
+    if (!bitcoin_npc_spawned) {
+        let npc_inst = FindNpcInstance("GPU Mining Rig");
+        if (npc_inst != undefined) {
+            _inst.btc_inst = npc_inst
+        }
+    }
+});
+ObjectSetScript("btc_obj","step_normal_event",func(_inst) {
+    let time_btc_kill = FileDataRead("Time BTC kill");
+    let rig_has = FileDataRead("Rig has");
+    if (rig_has != undefined and rig_has > 0) {
+        _inst.sprite_index = SpriteGet("rig chest " + String(FileDataRead("Rig level")) + " btc");
+        ItemSetSpriteInventory("miner_" + String(FileDataRead("Rig level")),"rig " + String(FileDataRead("Rig level")) + " btc");
+        ItemSetSpriteIngame("miner_" + String(FileDataRead("Rig level")),"rig " + String(FileDataRead("Rig level")) + " btc");
+    }
+    if (rig_has != undefined and rig_has == 0) {
+        _inst.sprite_index = SpriteGet("rig chest " + String(FileDataRead("Rig level")));
+        ItemSetSpriteInventory("miner_" + String(FileDataRead("Rig level")),"rig " + String(FileDataRead("Rig level")));
+        ItemSetSpriteIngame("miner_" + String(FileDataRead("Rig level")),"rig " + String(FileDataRead("Rig level")));
+    }
+    if (_inst.completed) {return;}
+    if (time_btc_kill > 1) {
+        if (_inst.btc_inst != undefined) {
+            ChestSetItemCount("bitcoin_chest",rig_has,rig_has);
+            _inst.btc_inst.hp = 0;
+            _inst.completed = true
+            time_btc_kill = 0;
+            FileDataWrite("Time BTC kill", time_btc_kill);
+            FileDataWrite("btc log", "");
+        }
+    }
+    time_btc_kill += 1;
+    FileDataWrite("Time BTC kill", time_btc_kill);
+    
+});

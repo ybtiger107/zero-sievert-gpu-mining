@@ -1,0 +1,213 @@
+----------------------------------------------------
+--Bitcoin Mining Rig 0 base
+ItemBarterCreate("miner_0");
+ItemSetName("miner_0", "GPU Mining Rig");
+ItemSetDescription("miner_0" , "A custom-built GPU mining rig used to extract cryptocurrency over time." );
+ItemSetWeight("miner_0", 30 );
+ItemSetPriceValue("miner_0", 0);
+ItemSetStackLimit("miner_0", 1);
+--Bitcoin Mining Computer_0
+SpriteLoad("rig 0","sprite/rig_0.png",1,0,0,0);
+ItemSetSpriteInventory("miner_0","rig 0");
+ItemSetSpriteIngame("miner_0","rig 0");
+ChestAddSpecialItem("electronic_box","miner_0",2);
+----------------------------------------------------
+--Bitcoin Mining Rig 1 base
+ItemBarterCreate("miner_1");
+ItemSetName("miner_1", "GPU Mining Rig");
+ItemSetDescription("miner_1" , "A custom-built GPU mining rig used to extract cryptocurrency over time. 1 GPU is inserted to Mining Rig" );
+ItemSetWeight("miner_1" , 32 );
+ItemSetPriceValue("miner_1", 2000000);
+ItemSetStackLimit("miner_1", 1);
+--Bitcoin Mining Computer_1
+SpriteLoad("rig 1","sprite/rig_1.png",1,0,0,0);
+SpriteLoad("rig 1 btc","sprite/rig_1_btc.png",1,0,0,0);
+ItemSetSpriteInventory("miner_1","rig 1");
+ItemSetSpriteIngame("miner_1","rig 1");
+--Bitcoin Mining Rig 1 Recipe
+CraftingRecipeCreate(CraftingType_BaseUpgrade1, Base_Module_None, 0,[
+        ["miner_0",1],
+        ["gpu",1]
+    ],
+    ["miner_1",1]
+);
+----------------------------------------------------
+--Bitcoin Mining Rig 2 base
+ItemBarterCreate("miner_2");
+ItemSetName("miner_2", "GPU Mining Rig");
+ItemSetDescription("miner_2" , "A custom-built GPU mining rig used to extract cryptocurrency over time. 2 GPU is inserted to Mining Rig" );
+ItemSetWeight("miner_2" , 34 );
+ItemSetPriceValue("miner_2", 4000000);
+ItemSetStackLimit("miner_2", 1);
+--Bitcoin Mining Computer_2
+SpriteLoad("rig 2","sprite/rig_2.png",1,0,0,0);
+SpriteLoad("rig 2 btc","sprite/rig_2_btc.png",1,0,0,0);
+ItemSetSpriteInventory("miner_2","rig 2");
+ItemSetSpriteIngame("miner_2","rig 2");
+--Bitcoin Mining Rig 2 Recipe
+CraftingRecipeCreate(CraftingType_BaseUpgrade1, Base_Module_None, 0,[
+        ["miner_1",1],
+        ["gpu",1]
+    ],
+    ["miner_2",1]
+);
+----------------------------------------------------
+--Bitcoin Mining Rig 3 base
+ItemBarterCreate("miner_3");
+ItemSetName("miner_3", "GPU Mining Rig");
+ItemSetDescription("miner_3" , "A custom-built GPU mining rig used to extract cryptocurrency over time. 3 GPU is inserted to Mining Rig" );
+ItemSetWeight("miner_3" , 36 );
+ItemSetPriceValue("miner_3", 6000000);
+ItemSetStackLimit("miner_3", 1);
+--Bitcoin Mining Computer_3
+SpriteLoad("rig 3","sprite/rig_3.png",1,0,0,0);
+SpriteLoad("rig 3 btc","sprite/rig_3_btc.png",1,0,0,0);
+ItemSetSpriteInventory("miner_3","rig 3");
+ItemSetSpriteIngame("miner_3","rig 3");
+--Bitcoin Mining Rig 3 Recipe
+CraftingRecipeCreate(CraftingType_BaseUpgrade1, Base_Module_None, 0,[
+        ["miner_2",1],
+        ["gpu",1]
+    ],
+    ["miner_3",1]
+);
+----------------------------------------------------
+--Bitcoin Mining Rig 4 base
+ItemBarterCreate("miner_4");
+ItemSetName("miner_4", "GPU Mining Rig");
+ItemSetDescription("miner_4" , "A custom-built GPU mining rig used to extract cryptocurrency over time. 4 GPU is inserted to Mining Rig" );
+ItemSetWeight("miner_4" , 38 );
+ItemSetPriceValue("miner_4", 8000000);
+ItemSetStackLimit("miner_4", 1);
+--Bitcoin Mining Computer_4
+SpriteLoad("rig 4","sprite/rig_4.png",1,0,0,0);
+SpriteLoad("rig 4 btc","sprite/rig_4_btc.png",1,0,0,0);
+ItemSetSpriteInventory("miner_4","rig 4");
+ItemSetSpriteIngame("miner_4","rig 4");
+--Bitcoin Mining Rig 4 Recipe
+CraftingRecipeCreate(CraftingType_BaseUpgrade2, Base_Module_None, 0,[
+        ["miner_3",1],
+        ["gpu",1]
+    ],
+    ["miner_4",1]
+);
+----------------------------------------------------
+--Bitcoin Mining Rig 5 base
+ItemBarterCreate("miner_5");
+ItemSetName("miner_5", "GPU Mining Rig");
+ItemSetDescription("miner_5" , "A custom-built GPU mining rig used to extract cryptocurrency over time. 5 GPU is inserted to Mining Rig" );
+ItemSetWeight("miner_5" , 40 );
+ItemSetPriceValue("miner_5", 10000000);
+ItemSetStackLimit("miner_5", 1);
+--Bitcoin Mining Computer_5
+SpriteLoad("rig 5","sprite/rig_5.png",1,0,0,0);
+SpriteLoad("rig 5 btc","sprite/rig_5_btc.png",1,0,0,0);
+ItemSetSpriteInventory("miner_5","rig 5");
+ItemSetSpriteIngame("miner_5","rig 5");
+--Bitcoin Mining Rig 5 Recipe
+CraftingRecipeCreate(CraftingType_BaseUpgrade2, Base_Module_None, 0,[
+        ["miner_4",1],
+        ["gpu",1]
+    ],
+    ["miner_5",1]
+);
+----------------------------------------------------
+--Bitcoin Mining Rig 6 base
+ItemBarterCreate("miner_6");
+ItemSetName("miner_6", "GPU Mining Rig");
+ItemSetDescription("miner_6" , "A custom-built GPU mining rig used to extract cryptocurrency over time. 6 GPU is inserted to Mining Rig" );
+ItemSetWeight("miner_6" , 42 );
+ItemSetPriceValue("miner_6", 12000000);
+ItemSetStackLimit("miner_6", 1);
+--Bitcoin Mining Computer_6
+SpriteLoad("rig 6","sprite/rig_6.png",1,0,0,0);
+SpriteLoad("rig 6 btc","sprite/rig_6_btc.png",1,0,0,0);
+ItemSetSpriteInventory("miner_6","rig 6");
+ItemSetSpriteIngame("miner_6","rig 6");
+--Bitcoin Mining Rig 6 Recipe
+CraftingRecipeCreate(CraftingType_BaseUpgrade2, Base_Module_None, 0,[
+        ["miner_5",1],
+        ["gpu",1]
+    ],
+    ["miner_6",1]
+);
+----------------------------------------------------
+--Bitcoin Mining Rig 7 base
+ItemBarterCreate("miner_7");
+ItemSetName("miner_7", "GPU Mining Rig");
+ItemSetDescription("miner_7" , "A custom-built GPU mining rig used to extract cryptocurrency over time. 7 GPU is inserted to Mining Rig" );
+ItemSetWeight("miner_7" , 44 );
+ItemSetPriceValue("miner_7", 14000000);
+ItemSetStackLimit("miner_7", 1);
+--Bitcoin Mining Computer_7
+SpriteLoad("rig 7","sprite/rig_7.png",1,0,0,0);
+SpriteLoad("rig 7 btc","sprite/rig_7_btc.png",1,0,0,0);
+ItemSetSpriteInventory("miner_7","rig 7");
+ItemSetSpriteIngame("miner_7","rig 7");
+--Bitcoin Mining Rig 7 Recipe
+CraftingRecipeCreate(CraftingType_BaseUpgrade3, Base_Module_None, 0,[
+        ["miner_6",1],
+        ["gpu",1]
+    ],
+    ["miner_7",1]
+);
+----------------------------------------------------
+--Bitcoin Mining Rig 8 base
+ItemBarterCreate("miner_8");
+ItemSetName("miner_8", "GPU Mining Rig");
+ItemSetDescription("miner_8" , "A custom-built GPU mining rig used to extract cryptocurrency over time. 8 GPU is inserted to Mining Rig" );
+ItemSetWeight("miner_8" , 46 );
+ItemSetPriceValue("miner_8", 16000000);
+ItemSetStackLimit("miner_8", 1);
+--Bitcoin Mining Computer_8
+SpriteLoad("rig 8","sprite/rig_8.png",1,0,0,0);
+SpriteLoad("rig 8 btc","sprite/rig_8_btc.png",1,0,0,0);
+ItemSetSpriteInventory("miner_8","rig 8");
+ItemSetSpriteIngame("miner_8","rig 8");
+--Bitcoin Mining Rig 8 Recipe
+CraftingRecipeCreate(CraftingType_BaseUpgrade3, Base_Module_None, 0,[
+        ["miner_7",1],
+        ["gpu",1]
+    ],
+    ["miner_8",1]
+);
+----------------------------------------------------
+--Bitcoin Mining Rig 9 base
+ItemBarterCreate("miner_9");
+ItemSetName("miner_9", "GPU Mining Rig");
+ItemSetDescription("miner_9" , "A custom-built GPU mining rig used to extract cryptocurrency over time. 9 GPU is inserted to Mining Rig" );
+ItemSetWeight("miner_9" , 48 );
+ItemSetPriceValue("miner_9", 18000000);
+ItemSetStackLimit("miner_9", 1);
+--Bitcoin Mining Computer_9
+SpriteLoad("rig 9","sprite/rig_9.png",1,0,0,0);
+SpriteLoad("rig 9 btc","sprite/rig_9_btc.png",1,0,0,0);
+ItemSetSpriteInventory("miner_9","rig 9");
+ItemSetSpriteIngame("miner_9","rig 9");
+--Bitcoin Mining Rig 9 Recipe
+CraftingRecipeCreate(CraftingType_BaseUpgrade3, Base_Module_None, 0,[
+        ["miner_8",1],
+        ["gpu",1]
+    ],
+    ["miner_9",1]
+);
+----------------------------------------------------
+--Bitcoin Mining Rig 10 base
+ItemBarterCreate("miner_10");
+ItemSetName("miner_10", "GPU Mining Rig");
+ItemSetDescription("miner_10" , "A custom-built GPU mining rig used to extract cryptocurrency over time. 10 GPU is inserted to Mining Rig" );
+ItemSetWeight("miner_10" , 50 );
+ItemSetPriceValue("miner_10", 20000000);
+ItemSetStackLimit("miner_10", 1);
+--Bitcoin Mining Computer_10
+SpriteLoad("rig 10","sprite/rig_10.png",1,0,0,0);
+SpriteLoad("rig 10 btc","sprite/rig_10_btc.png",1,0,0,0);
+ItemSetSpriteInventory("miner_10","rig 10");
+ItemSetSpriteIngame("miner_10","rig 10");
+--Bitcoin Mining Rig 10 Recipe
+CraftingRecipeCreate(CraftingType_BaseUpgrade3, Base_Module_None, 0,[
+        ["miner_9",1],
+        ["gpu",1]
+    ],
+    ["miner_10",1]
+);
