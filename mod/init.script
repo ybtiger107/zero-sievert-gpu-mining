@@ -78,13 +78,16 @@ let gpu_mining_initialize_state = func() {
         if (saved_rig_seen == 1 or saved_rig_seen == true) {
             rig_seen = 1;
         }
-        FileDataWrite(GPU_MINING_RIG_SEEN, rig_seen);
 
         let max_rig_level = FileDataRead(GPU_MINING_MAX_RIG_LEVEL);
         if (max_rig_level == undefined) {
             max_rig_level = 0;
         }
         max_rig_level = Clamp(Round(max_rig_level), 0, 10);
+        if (max_rig_level > 0) {
+            rig_seen = 1;
+        }
+        FileDataWrite(GPU_MINING_RIG_SEEN, rig_seen);
         FileDataWrite(GPU_MINING_MAX_RIG_LEVEL, max_rig_level);
 
         let pending_btc = FileDataRead(GPU_MINING_PENDING_BTC);
