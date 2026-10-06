@@ -17,7 +17,7 @@ This describes the repository implementation after Compatibility Restoration Pha
 
 Executes the item/rig/chest scripts, initializes namespaced canonical state, and immediately applies the saved BTC price. On the first canonical initialization only, compatible values are migrated from the published legacy keys. Legacy keys are retained but are not used by new runtime behavior.
 
-The mod registers `player_spawn` to create `gpu_mining_3485717804_worker`, a non-spatial custom object whose `step_normal_event` owns mining progress. It no longer assigns `obj_player.step_normal_event`.
+The mod registers `player_spawn` to create `gpu_mining_3485717804_worker`, a mod-owned, non-solid worker object spawned at `(0, 0)`. Its `step_normal_event` owns mining progress and has no player-position dependency. The published implementation previously assigned `obj_player.step_normal_event`; the restored implementation no longer does.
 
 ### Rig discovery and upgrading
 
@@ -59,11 +59,11 @@ Canonical `FileDataRead`/`FileDataWrite` keys use Real values:
 - `gpu_mining_3485717804_pending_btc` (`0..10`)
 - `gpu_mining_3485717804_btc_price` (`100000..400000`)
 
-On first initialization, `Time BTC`, `Rig level`, `Rig made`, `Rig has`, and `btc price` are migrated where safely interpretable. Canonical state wins after the version key exists. The migration cannot recover pending BTC already erased by the published implementation. `Time BTC kill`, `Bitcoin NPC spawned`, `Bitcoin OBJ spawned`, and `btc log` are not migrated or used.
+On first initialization, defined `Time BTC`, `Rig level`, and `Rig has` values are rounded and clamped to their supported ranges. `Rig made` sets the canonical flag only when it equals `true` or `1`, and a positive migrated Rig level also sets that flag. An in-range `btc price` is rounded; otherwise the minimum default remains. This is key-specific normalization, not general type validation. Canonical state wins after the version key exists. On later canonical loads, `rig_seen` is normalized to numeric `0` or `1`, and a positive normalized `max_rig_level` forces it to `1` without fabricating a Rig level. The migration cannot recover pending BTC already erased by the published implementation. `Time BTC kill`, `Bitcoin NPC spawned`, `Bitcoin OBJ spawned`, and `btc log` are not migrated or used.
 
 ## Vanilla Dependencies
 
-- Objects/templates: `obj_player`, `obj_npc_human_parent`, `trader_faction1`
+- Objects/templates: `obj_npc_human_parent`, `trader_faction1`
 - Loot containers/enemies: `electronic_box`, `cabinet`, `bag`, `safe`, `bandit_boss_valentin`, `killa`
 - Trader: `bar`
 - Recipe ingredients and crafting categories listed in `item.script`/`rig.script`
@@ -95,5 +95,5 @@ On first initialization, `Time BTC`, `Rig level`, `Rig made`, `Rig has`, and `bt
 - Frame/step counting assumes a stable update cadence and remains intentionally unchanged at 162,000 steps.
 - Worker lifetime and duplicate behavior across room/player lifecycles require Windows verification.
 - The inventory API's stash coverage is undocumented, so historical maximum remains the active level.
-- Ready output is still cleared on a later lower-progress Hub entry because no reliable chest-collection acknowledgement is documented. This is the main remaining runtime blocker.
+- Pending BTC can still be lost on a later Hub entry/load with incomplete progress because reliable chest-collection acknowledgement remains unresolved. This is the main remaining runtime blocker.
 - The NPC-kill chest handoff remains technical debt because the current API documents chest configuration but no direct chest spawn or collection callback.
