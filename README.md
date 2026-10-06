@@ -28,7 +28,7 @@ The player searches for scarce hardware, commits money and materials to upgrades
 
 - Mining Rig items from level 0 through 10.
 - GPU, BTC, and BTC USB items, recipes, loot, values, and sprites.
-- Persistent mining time, rig level, ready output, spawn flags, and BTC price.
+- Persistent mining time, historical Rig level, ready output, and BTC price.
 - Dynamic BTC price between 100,000₽ and 400,000₽ after a completed cycle.
 - BTC USB fixed at 250,000₽.
 - Bunker visual and loot feedback when BTC is ready.
@@ -49,19 +49,21 @@ The published implementation uses ten GPU upgrades, a nominal 45-minute cycle, o
 
 ## Current Implementation Summary
 
-The mod creates its items, recipes, loot entries, rig tiers, sprites, and a special BTC chest. File-backed state is updated through `enter_hub` and a custom player step script; a temporary NPC is killed to materialize the loot chest. See [docs/implementation.md](docs/implementation.md).
+The mod creates its items, recipes, loot entries, rig tiers, sprites, and a special BTC chest. Mining now runs on a namespaced mod-owned worker spawned from `player_spawn` instead of replacing `obj_player.step_normal_event`. Namespaced numeric state is initialized once from compatible published-save keys, and the saved BTC price is reapplied when the mod loads. Hub settlement and the temporary NPC-to-chest delivery workaround remain in place. See [docs/implementation.md](docs/implementation.md).
 
 ## Known Limitations
 
 - The rig can become unpickable or be lost if dropped; keep it in inventory/stash.
-- Newly obtained rigs may require leaving and re-entering the hub before interaction initializes.
 - BTC should be collected before another status transition; the historical page warns it may disappear.
-- The system uses frame/step counting and a complex NPC/object workaround rather than a dedicated timer and persistent container.
+- The system still uses the published 162,000-step cycle and a complex NPC/object workaround rather than an elapsed-time timer and persistent container.
+- The active mining level remains the historically discovered maximum. Losing or selling the physical Rig may therefore leave mining active until ownership and stash behavior can be verified.
+- The game API does not expose a reliable chest-collection acknowledgement, so pending-BTC clearing remains the main runtime blocker.
+- Worker lifetime and duplicate behavior across every room/respawn case still require Windows verification.
 - A public “Crash with new version” report dated 2026-09-16 remains unreproduced.
 
 ## Compatibility
 
-The published payload matches this repository. Static dependencies and vanilla loot/trader IDs are present in the captured current game data, but the player-step override, global custom IDs, persistence transitions, and current crash report require Windows testing. See [docs/compatibility.md](docs/compatibility.md).
+Static dependencies and vanilla loot/trader IDs are present in the captured current game data. Phase 1 removes the direct player-step override, restores saved BTC prices, and replaces Boolean/runtime FileData writes with namespaced numeric durable state. Worker lifecycle, stash detection, chest collection acknowledgement, and the current crash report still require Windows testing. See [docs/compatibility.md](docs/compatibility.md).
 
 ## Current Milestone
 
