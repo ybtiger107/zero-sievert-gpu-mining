@@ -15,13 +15,17 @@ This describes the repository implementation after Compatibility Restoration Pha
 
 ### Initialization and migration
 
-Executes the item/rig/chest scripts, initializes namespaced canonical state, and immediately applies the saved BTC price. On the first canonical initialization only, compatible values are migrated from the published legacy keys. Legacy keys are retained but are not used by new runtime behavior.
+Executes the item/rig/chest scripts and registers objects and hooks. It does not touch FileData: the official documentation says `init` runs when the mod first loads, while FileData belongs to the save that is loaded later.
+
+Every `enter_hub` (documented to fire on new game, save load, and raid return) first runs `gpu_mining_initialize_state()` and reapplies the saved BTC price. The worker step also initializes state if the version key is still missing, in case it runs before `enter_hub`. On the first canonical initialization of a save only, compatible values are migrated from the published legacy keys; later calls only normalize canonical values. Legacy keys are retained but are not used by new runtime behavior.
+
+Shared constants and helper functions are assigned as Catspeak globals (no top-level `let`). The game embeds Catspeak 3, whose callbacks have their own local scope and no closure support was found in the runtime, so a top-level `let` read inside an event or object callback would not resolve to the script value. The published implementation used the same global-function pattern for its NPC lookup. `tools/static_check.py` guards this rule and the core invariants.
 
 The mod registers `player_spawn` to create `gpu_mining_3485717804_worker`, a mod-owned, non-solid worker object spawned at `(0, 0)`. Its `step_normal_event` owns mining progress and has no player-position dependency. The published implementation previously assigned `obj_player.step_normal_event`; the restored implementation no longer does.
 
 ### Rig discovery and upgrading
 
-`miner_0` can drop from `electronic_box`. Each next tier consumes the previous rig and one `gpu`; tiers 1–3, 4–6, and 7–10 use progressively higher crafting categories. The worker scans `miner_10` down through `miner_0`, records that a Rig has been seen, and only raises the historical maximum level.
+`miner_0` can drop from `electronic_box`. Each next tier consumes the previous rig and one `gpu`; tiers 1–3, 4–6, and 7–10 use progressively higher crafting categories. The worker scans `miner_10` down through `miner_0`, records that a Rig has been seen, and only raises the historical maximum level. When the maximum rises, the superseded tier's item sprites are reset to normal, as the published upgrade check did.
 
 The detected physical level and active mining level are deliberately distinct. During Phase 1, active mining continues to use the historical maximum to preserve published-save and possible stash behavior. Losing or selling the physical Rig can therefore leave mining active, matching the old effective state model.
 
@@ -31,7 +35,7 @@ While the historical maximum Rig level is above zero, the worker increments cano
 
 ### Collection workaround
 
-On Hub entry, a `bitcoin_npc` copied from `trader_faction1` and `btc_obj` appear at `(320, 900)` when a Rig has been seen. The object updates ready sprites. After a short instance-local step counter, it configures `bitcoin_chest`, kills the NPC, and relies on its dropped chest to expose mined BTC. Spawn status and kill delay are no longer persisted.
+On Hub entry, a `bitcoin_npc` copied from `trader_faction1` and `btc_obj` appear at `(320, 900)` when a Rig has been seen. The object updates ready sprites. After a short instance-local step counter, it configures `bitcoin_chest`, kills the NPC, and relies on its dropped chest to expose mined BTC. `btc_inst` is explicitly initialized, and if the NPC is not visible when the object is created the lookup is retried each step until found instead of stalling permanently. Spawn status and kill delay are no longer persisted. The chest is configured even when pending BTC is `0`, as in the published payload, so a Hub visit without a completed cycle produces an empty "Mined Bitcoin" chest.
 
 ### BTC risk choice
 
@@ -91,6 +95,10 @@ On first initialization, defined `Time BTC`, `Rig level`, and `Rig has` values a
 - Sprites and the temporary `btc_obj` bridge inventory state and the bunker representation.
 
 ## Known Implementation Debt
+
+- The lookup reads the undocumented `npc_name` instance variable and kills via undocumented `hp`; the October 2026 AI rewrite could change either.
+- `bitcoin_npc` is copied from `trader_faction1` without a preceding `NpcCreate`, unlike the documented sequence and the Legendary Merchant restoration; this is published behavior and is left unchanged pending runtime evidence.
+- `FileDataRead` documentation says a missing key returns "an empty struct" while its own example tests for `undefined`; the code follows the example and the published implementation.
 
 - Frame/step counting assumes a stable update cadence and remains intentionally unchanged at 162,000 steps.
 - Worker lifetime and duplicate behavior across room/player lifecycles require Windows verification.
