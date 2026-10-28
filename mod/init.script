@@ -1,14 +1,19 @@
--- Persistent state keys
-let GPU_MINING_STATE_VERSION = "gpu_mining_3485717804_state_version";
-let GPU_MINING_PROGRESS_STEPS = "gpu_mining_3485717804_progress_steps";
-let GPU_MINING_RIG_SEEN = "gpu_mining_3485717804_rig_seen";
-let GPU_MINING_MAX_RIG_LEVEL = "gpu_mining_3485717804_max_rig_level";
-let GPU_MINING_PENDING_BTC = "gpu_mining_3485717804_pending_btc";
-let GPU_MINING_BTC_PRICE = "gpu_mining_3485717804_btc_price";
+-- Shared values and helpers are Catspeak globals, not top-level `let` locals:
+-- they are read later from event and object callbacks, which do not capture
+-- the script's local variables. The published implementation used the same
+-- global-function pattern for its NPC lookup helper.
 
-let GPU_MINING_STEP_THRESHOLD = 162000;
-let GPU_MINING_BTC_PRICE_MIN = 100000;
-let GPU_MINING_BTC_PRICE_MAX = 400000;
+-- Persistent state keys
+GPU_MINING_STATE_VERSION = "gpu_mining_3485717804_state_version";
+GPU_MINING_PROGRESS_STEPS = "gpu_mining_3485717804_progress_steps";
+GPU_MINING_RIG_SEEN = "gpu_mining_3485717804_rig_seen";
+GPU_MINING_MAX_RIG_LEVEL = "gpu_mining_3485717804_max_rig_level";
+GPU_MINING_PENDING_BTC = "gpu_mining_3485717804_pending_btc";
+GPU_MINING_BTC_PRICE = "gpu_mining_3485717804_btc_price";
+
+GPU_MINING_STEP_THRESHOLD = 162000;
+GPU_MINING_BTC_PRICE_MIN = 100000;
+GPU_MINING_BTC_PRICE_MAX = 400000;
 
 -- Content definitions
 ScriptExecute("scripts/item.script");
@@ -17,7 +22,7 @@ ScriptExecute("scripts/chest.script");
 
 -- Initialize canonical state once from the published legacy keys. Canonical
 -- state is validated on later loads without reading legacy state again.
-let gpu_mining_initialize_state = func() {
+gpu_mining_initialize_state = func() {
     let state_version = FileDataRead(GPU_MINING_STATE_VERSION);
 
     if (state_version == undefined) {
@@ -111,7 +116,7 @@ let gpu_mining_initialize_state = func() {
 
 -- Detect the highest physical Rig currently visible to the documented
 -- inventory API, then update the historical maximum only upward.
-let gpu_mining_sync_rig_state = func() {
+gpu_mining_sync_rig_state = func() {
     let physical_level = 0;
     let physical_rig_found = 0;
     let level = 10;
@@ -133,6 +138,10 @@ let gpu_mining_sync_rig_state = func() {
         FileDataWrite(GPU_MINING_RIG_SEEN, 1);
     }
     if (physical_rig_found == 1 and physical_level > max_rig_level) {
+        -- As in the published upgrade check, return the superseded tier to
+        -- its normal sprite so it cannot keep a stale BTC-ready sprite.
+        ItemSetSpriteInventory("miner_" + String(max_rig_level), "rig " + String(max_rig_level));
+        ItemSetSpriteIngame("miner_" + String(max_rig_level), "rig " + String(max_rig_level));
         max_rig_level = physical_level;
         FileDataWrite(GPU_MINING_MAX_RIG_LEVEL, max_rig_level);
     }
@@ -141,7 +150,7 @@ let gpu_mining_sync_rig_state = func() {
 }
 
 -- Find the temporary NPC used by the published NPC-to-chest workaround.
-let gpu_mining_find_npc_instance = func(npc_name) {
+gpu_mining_find_npc_instance = func(npc_name) {
     let hub_npcs = ObjectGetAllInstances(obj_npc_human_parent);
     while (ArrayLength(hub_npcs) > 0) {
         let current_npc = ArrayFirst(hub_npcs);
@@ -152,8 +161,9 @@ let gpu_mining_find_npc_instance = func(npc_name) {
     }
 }
 
-gpu_mining_initialize_state();
-ItemSetPriceValue("btc", FileDataRead(GPU_MINING_BTC_PRICE));
+-- FileData belongs to the loaded save, while init.script runs when the mod
+-- first loads. State is therefore initialized per save from enter_hub (new
+-- game, save load, raid return) and, as a fallback, by the worker.
 
 -- Dedicated mining worker. The documented player_spawn event creates one for
 -- each room/player lifecycle; duplicate and lifetime behavior still requires
@@ -161,6 +171,9 @@ ItemSetPriceValue("btc", FileDataRead(GPU_MINING_BTC_PRICE));
 ObjectCreate("gpu_mining_3485717804_worker");
 ObjectSetType("gpu_mining_3485717804_worker", "obj_mod_generic");
 ObjectSetScript("gpu_mining_3485717804_worker", "step_normal_event", func(_inst) {
+    if (FileDataRead(GPU_MINING_STATE_VERSION) == undefined) {
+        gpu_mining_initialize_state();
+    }
     let active_mining_level = gpu_mining_sync_rig_state();
     if (active_mining_level > 0) {
         let progress_steps = FileDataRead(GPU_MINING_PROGRESS_STEPS);
@@ -176,6 +189,9 @@ EventAssignFunction("player_spawn", func() {
 -- Preserve the published Hub settlement and pending-clearing behavior until a
 -- reliable chest collection acknowledgement can be verified at runtime.
 EventAssignFunction("enter_hub", func() {
+    gpu_mining_initialize_state();
+    ItemSetPriceValue("btc", FileDataRead(GPU_MINING_BTC_PRICE));
+
     let active_mining_level = gpu_mining_sync_rig_state();
     let progress_steps = FileDataRead(GPU_MINING_PROGRESS_STEPS);
 
@@ -211,6 +227,7 @@ ObjectSetScript("btc_obj", "create_event", func(_inst) {
     _inst.depth = -910;
     _inst.completed = false;
     _inst.kill_delay = 0;
+    _inst.btc_inst = undefined;
 
     let npc_inst = gpu_mining_find_npc_instance("GPU Mining Rig");
     if (npc_inst != undefined) {
@@ -234,6 +251,14 @@ ObjectSetScript("btc_obj", "step_normal_event", func(_inst) {
 
     if (_inst.completed) {
         return;
+    }
+    -- Retry the lookup if the NPC was not yet visible when this object was
+    -- created, instead of leaving the reward handoff permanently stalled.
+    if (_inst.btc_inst == undefined) {
+        let npc_inst = gpu_mining_find_npc_instance("GPU Mining Rig");
+        if (npc_inst != undefined) {
+            _inst.btc_inst = npc_inst;
+        }
     }
     if (_inst.kill_delay > 1) {
         if (_inst.btc_inst != undefined) {
