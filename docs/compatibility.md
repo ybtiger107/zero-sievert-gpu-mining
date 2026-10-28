@@ -4,9 +4,10 @@ Static audit updated for Compatibility Restoration Phase 1 on 2026-10-06 and re-
 
 ## Game Baseline
 
-- Last statically inspected build: `25269476` (`_game-baseline/steamapps/appmanifest_1782120.acf`, installed 2026-10-06), with its bundled Modding Documentation and Catspeak 3 runtime.
-- Released after that baseline: "Completely New Enemy AI Is Here" (2026-10-16) and "New Update: Improved Enemy AI" (2026-10-27), per the Steam news feed. The fetched announcement excerpts mention no modding API change; that is not proof the API is unchanged. Builds `25883465` and `26249078` are recorded by SteamDB but were not installed locally.
-- Refreshing requires an owned-account SteamCMD download into a new directory (the current baseline must be kept), then diffing `Modding Documentation/`, `exposed_values.txt`, and `ZS_vanilla/gamedata/`.
+- Latest statically inspected baseline: Game 1.4.6, Mod API 3, Steam build `26249078` (`_game-baseline-2026-10-28/steamapps/appmanifest_1782120.acf`, installed 2026-10-28 01:48 UTC; `data.win` compiled 2026-10-27 16:46 UTC, matching the 2026-10-27 "Improved Enemy AI" update).
+- Previous baseline, kept unchanged: build `25269476` (`_game-baseline/`, installed 2026-10-06; `data.win` compiled 2026-09-12). It predates the 2026-10-16 AI rewrite.
+- Between the two builds, `exposed_values.txt` removed no API used here. Item, weapon, and trader data is unchanged; `npc.json`, `npc_preset.json`, and `chest.json` changed. The vanilla templates, containers, trader, and recipe ingredients this mod uses are still present.
+- Mod API 3 documents that event, object, and timer callbacks cannot rely on variables defined outside themselves (Examples 31, 35, 40), that `ScriptGet` should be called inside the function that uses a helper (Example 40), that FileData is a per-mod store isolated by mod name, that `NpcCopy` creates its destination ID, and that `EventAssignFunction` keeps one callback per event per mod.
 
 ## Verified Compatible (Static)
 
@@ -61,16 +62,19 @@ Static audit updated for Compatibility Restoration Phase 1 on 2026-10-06 and re-
 
 | ID | Severity | Location | Finding | Origin | Status |
 | --- | --- | --- | --- | --- | --- |
-| GM-1 | P0 (likely) | `mod/init.script` constants/helpers | Top-level `let` values and helpers were read inside event/object callbacks. The embedded Catspeak 3 runtime has local/global expression nodes but no closure support, so callbacks would read undefined globals: state keys, threshold, and NPC lookup would all fail. | Restoration (`8f49357`) | Fixed: converted to globals; `tools/static_check.py` guards it |
-| GM-2 | P1 | `mod/init.script` initialization | Canonical state was initialized and the BTC price applied only from `init`, which runs when the mod loads, not per save. Saves loaded later were never migrated or normalized, and switching saves in one session kept the wrong price. | Restoration (`8f49357`) | Fixed: per-save initialization on `enter_hub` plus a worker fallback |
+| GM-1 | P0 (likely) | `mod/init.script` constants/helpers | Top-level `let` values and helpers were read inside event/object callbacks. Mod API 3 states that such callbacks cannot rely on outside variables. The first correction (`e26de03`) used plain Catspeak globals, which the same documentation does not guarantee either. | Restoration (`8f49357`); incomplete fix `e26de03` | Corrected statically: keys and constants are literals inside each function; helpers use namespaced `ScriptExpose` and are fetched with `ScriptGet` inside callbacks. Runtime confirmation pending (issue #3) |
+| GM-2 | P3 | `mod/init.script` initialization | State was initialized and the BTC price applied only from top-level `init` code. Mod API 3 examples do read and write FileData from `init`, so the earlier claim that FileData is unavailable there is withdrawn. Initializing on `enter_hub` with a worker fallback is kept because it is idempotent and also covers whatever save-slot semantics FileData has. | Restoration (`8f49357`) | Kept as hardening; save-slot semantics unverified |
 | GM-3 | P2 | `btc_obj` create/step | `btc_inst` was unset when the first NPC lookup failed (an unset instance read), and the lookup was never retried, which stalled reward delivery (known issue 10). | Published | Fixed: explicit init and per-step retry |
-| GM-4 | P3 | `gpu_mining_sync_rig_state` | Restoration dropped the published reset of the superseded tier's sprite, so a stale BTC-ready sprite could persist for that tier. | Restoration | Fixed |
+| GM-4 | P3 | rig-state sync helper | Restoration dropped the published reset of the superseded tier's sprite, so a stale BTC-ready sprite could persist for that tier. | Restoration | Fixed |
 | GM-5 | P1 | `enter_hub` pending clearing | Pending BTC is cleared by the next Hub entry with incomplete progress, including save load. Uncollected BTC can therefore be lost. This is the published anti-duplication behavior. | Published | Open: needs a collection acknowledgement (issue #2) |
 | GM-6 | P2 | worker / `player_spawn` | Worker duplication and lifetime are unverified; a duplicate would multiply mining speed. | Restoration | Open: issue #1 |
 | GM-7 | P2 | NPC lookup / kill | Depends on the undocumented `npc_name` and `hp` instance variables. The October AI rewrite is the main risk. | Published | Open: issues #2 and #3 |
 | GM-8 | P2 | `InventoryItemExists` | Stash coverage is undocumented, so mining uses the historical maximum and continues after the Rig is lost. | Intentional compromise | Open: issue #4 |
-| GM-9 | P3 | `bitcoin_npc` | `NpcCopy` is used without `NpcCreate`. | Published | Documented, unchanged |
-| GM-10 | P3 | `FileDataRead` docs | The documentation says a missing key returns an empty struct, but its example checks for `undefined`. | Documentation | Runtime check in issue #3 |
+| GM-9 | — | `bitcoin_npc` | `NpcCopy` without `NpcCreate` is the correct Mod API 3 usage: `NpcCopy` creates the destination ID, which must be new. | Published | No change needed |
+| GM-10 | — | `FileDataRead` docs | Mod API 3 now states that a missing key returns `undefined` when no default is given, which matches the code. | Documentation | Resolved by documentation |
+| GM-12 | P2 | FileData scope | Mod API 3 isolates FileData by mod name. Whether legacy keys written by the published mod under older builds are still visible, and whether the store is per save slot, is not documented. If they are not visible, legacy saves migrate to defaults. The `meta.ini` name `GPU Mining System` must not change. | External change | Open: legacy-save test (issue #3) |
 | GM-11 | P3 | `mod/sprite/rig_chest_6_btc (1).png` | Unreferenced duplicate asset. | Published | Left unchanged (Workshop payload parity) |
 
-Release readiness: not ready. Issues #1–#4 must pass on Windows on the current build first, with GM-1/GM-2 confirmed by a fresh-save test and a legacy-save test.
+Release readiness: not ready. The static corrections are complete and the payload is ready for Windows runtime testing on build `26249078`. Issues #1–#4 must pass first, including a fresh save, a save from the published `v1.0.1` (GM-1, GM-12), and two save slots in one session.
+
+`python3 tools/static_check.py` rejects the original top-level `let` captures, the plain-global variant, `ScriptGet` names without a matching earlier `ScriptExpose`, `NpcCopy` onto an ID already created by `NpcCreate`, and drift in core invariants. It is a string-level check, not proof of Catspeak runtime behavior.

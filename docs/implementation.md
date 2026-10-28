@@ -4,7 +4,8 @@ This describes the repository implementation after Compatibility Restoration Pha
 
 ## Important Source Files
 
-- `mod/init.script`: canonical-state migration, BTC price restoration, mining worker, hub finalization, rig NPC/object spawning, and collection handoff.
+- `mod/init.script`: exposed state/rig/NPC helpers, canonical-state migration, BTC price restoration, mining worker, hub finalization, rig NPC/object spawning, and collection handoff.
+- `tools/static_check.py`: static regression checks; not part of the Workshop payload.
 - `mod/scripts/item.script`: GPU, BTC, and BTC USB definitions; loot tables; trader stock; recipes.
 - `mod/scripts/rig.script`: `miner_0` through `miner_10`, sprites, values, weights, and sequential recipes.
 - `mod/scripts/chest.script`: `bitcoin_chest` and bunker/ready sprites.
@@ -15,11 +16,11 @@ This describes the repository implementation after Compatibility Restoration Pha
 
 ### Initialization and migration
 
-Executes the item/rig/chest scripts and registers objects and hooks. It does not touch FileData: the official documentation says `init` runs when the mod first loads, while FileData belongs to the save that is loaded later.
+Executes the item/rig/chest scripts, exposes the helpers, and registers objects and hooks. Top-level code does not read FileData. Mod API 3 allows FileData access from `init`, but initialization is kept on `enter_hub` because it is idempotent and independent of how FileData relates to save slots.
 
-Every `enter_hub` (documented to fire on new game, save load, and raid return) first runs `gpu_mining_initialize_state()` and reapplies the saved BTC price. The worker step also initializes state if the version key is still missing, in case it runs before `enter_hub`. On the first canonical initialization of a save only, compatible values are migrated from the published legacy keys; later calls only normalize canonical values. Legacy keys are retained but are not used by new runtime behavior.
+Every `enter_hub` (documented to fire on new game, save load, and raid return) first runs the `GpuMining3485717804InitializeState` helper and reapplies the saved BTC price. The worker step also initializes state if the version key is still missing, in case it runs before `enter_hub`. On the first canonical initialization of a save only, compatible values are migrated from the published legacy keys; later calls only normalize canonical values. Legacy keys are retained but are not used by new runtime behavior.
 
-Shared constants and helper functions are assigned as Catspeak globals (no top-level `let`). The game embeds Catspeak 3, whose callbacks have their own local scope and no closure support was found in the runtime, so a top-level `let` read inside an event or object callback would not resolve to the script value. The published implementation used the same global-function pattern for its NPC lookup. `tools/static_check.py` guards this rule and the core invariants.
+Callback scope follows the Mod API 3 contract: event, object, and timer callbacks cannot rely on variables defined outside themselves. FileData keys and numeric constants are therefore literals inside each function. The three helpers are exposed at load with namespaced names (`GpuMining3485717804InitializeState`, `GpuMining3485717804SyncRigState`, `GpuMining3485717804FindNpcInstance`) and fetched with `ScriptGet` inside the function that calls them, as in the official Example 40. Per-visit reward state stays on the `btc_obj` instance. The worker fetches one helper per step. `tools/static_check.py` guards these rules and the core invariants.
 
 The mod registers `player_spawn` to create `gpu_mining_3485717804_worker`, a mod-owned, non-solid worker object spawned at `(0, 0)`. Its `step_normal_event` owns mining progress and has no player-position dependency. The published implementation previously assigned `obj_player.step_normal_event`; the restored implementation no longer does.
 
@@ -97,8 +98,9 @@ On first initialization, defined `Time BTC`, `Rig level`, and `Rig has` values a
 ## Known Implementation Debt
 
 - The lookup reads the undocumented `npc_name` instance variable and kills via undocumented `hp`; the October 2026 AI rewrite could change either.
-- `bitcoin_npc` is copied from `trader_faction1` without a preceding `NpcCreate`, unlike the documented sequence and the Legendary Merchant restoration; this is published behavior and is left unchanged pending runtime evidence.
-- `FileDataRead` documentation says a missing key returns "an empty struct" while its own example tests for `undefined`; the code follows the example and the published implementation.
+- `bitcoin_npc` is created by `NpcCopy` from `trader_faction1` without `NpcCreate`, which is the Mod API 3 contract (the destination ID must be new).
+- FileData is isolated by mod name in Mod API 3. Visibility of legacy keys from older builds and save-slot scope are runtime uncertainties.
+- Helper names exposed with `ScriptExpose` are visible to every mod; they are namespaced with the Workshop ID.
 
 - Frame/step counting assumes a stable update cadence and remains intentionally unchanged at 162,000 steps.
 - Worker lifetime and duplicate behavior across room/player lifecycles require Windows verification.

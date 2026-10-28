@@ -49,7 +49,7 @@ The published implementation uses ten GPU upgrades, a nominal 45-minute cycle, o
 
 ## Current Implementation Summary
 
-The mod creates its items, recipes, loot entries, rig tiers, sprites, and a special BTC chest. Mining now runs on a namespaced mod-owned worker spawned from `player_spawn` instead of replacing `obj_player.step_normal_event`. Namespaced numeric state is initialized per save on Hub entry (with a worker fallback), migrating compatible published-save keys once, and the saved BTC price is reapplied on every Hub entry. Hub settlement and the temporary NPC-to-chest delivery workaround remain in place. See [docs/implementation.md](docs/implementation.md).
+The mod creates its items, recipes, loot entries, rig tiers, sprites, and a special BTC chest. Mining now runs on a namespaced mod-owned worker spawned from `player_spawn` instead of replacing `obj_player.step_normal_event`. Namespaced numeric state is initialized and normalized on Hub entry (with a worker fallback), migrating compatible published-save keys once, and the saved BTC price is reapplied on every Hub entry. Hub settlement and the temporary NPC-to-chest delivery workaround remain in place. See [docs/implementation.md](docs/implementation.md).
 
 ## Known Limitations
 
@@ -63,7 +63,7 @@ The mod creates its items, recipes, loot entries, rig tiers, sprites, and a spec
 
 ## Compatibility
 
-Static dependencies and vanilla loot/trader IDs are present in the captured current game data. Phase 1 removes the direct player-step override, restores saved BTC prices, and replaces Boolean/runtime FileData writes with namespaced numeric durable state. The 2026-10-28 audit corrected two restoration defects found statically: shared values were top-level `let` locals read from callbacks, and state was initialized only at mod load rather than per save. Worker lifecycle, stash detection, chest collection acknowledgement, and the current crash report still require Windows testing. See [docs/compatibility.md](docs/compatibility.md).
+Static dependencies and vanilla loot/trader IDs are present in the captured current game data. Phase 1 removes the direct player-step override, restores saved BTC prices, and replaces Boolean/runtime FileData writes with namespaced numeric durable state. The 2026-10-28 audit corrected a restoration defect found statically: callbacks read top-level `let` values, which Mod API 3 callbacks cannot rely on. Callbacks now use literal keys and namespaced `ScriptExpose`/`ScriptGet` helpers. The latest inspected baseline is Game 1.4.6, Mod API 3, Steam build `26249078`. Worker lifecycle, stash detection, chest collection acknowledgement, and the current crash report still require Windows testing. See [docs/compatibility.md](docs/compatibility.md).
 
 ## Current Milestone
 
