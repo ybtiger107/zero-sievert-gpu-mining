@@ -1,19 +1,9 @@
--- Shared values and helpers are Catspeak globals, not top-level `let` locals:
--- they are read later from event and object callbacks, which do not capture
--- the script's local variables. The published implementation used the same
--- global-function pattern for its NPC lookup helper.
-
--- Persistent state keys
-GPU_MINING_STATE_VERSION = "gpu_mining_3485717804_state_version";
-GPU_MINING_PROGRESS_STEPS = "gpu_mining_3485717804_progress_steps";
-GPU_MINING_RIG_SEEN = "gpu_mining_3485717804_rig_seen";
-GPU_MINING_MAX_RIG_LEVEL = "gpu_mining_3485717804_max_rig_level";
-GPU_MINING_PENDING_BTC = "gpu_mining_3485717804_pending_btc";
-GPU_MINING_BTC_PRICE = "gpu_mining_3485717804_btc_price";
-
-GPU_MINING_STEP_THRESHOLD = 162000;
-GPU_MINING_BTC_PRICE_MIN = 100000;
-GPU_MINING_BTC_PRICE_MAX = 400000;
+-- Callback scope contract (Mod API 3): event and object callbacks cannot rely
+-- on variables defined outside themselves. Persistent state therefore lives in
+-- FileData under literal keys, constants are literals inside each function,
+-- and shared helpers are exposed with namespaced ScriptExpose names and
+-- fetched with ScriptGet inside the function that uses them. Helpers are
+-- exposed here before any callback can run.
 
 -- Content definitions
 ScriptExecute("scripts/item.script");
@@ -22,19 +12,19 @@ ScriptExecute("scripts/chest.script");
 
 -- Initialize canonical state once from the published legacy keys. Canonical
 -- state is validated on later loads without reading legacy state again.
-gpu_mining_initialize_state = func() {
-    let state_version = FileDataRead(GPU_MINING_STATE_VERSION);
+ScriptExpose("GpuMining3485717804InitializeState", func() {
+    let state_version = FileDataRead("gpu_mining_3485717804_state_version");
 
     if (state_version == undefined) {
         let progress_steps = 0;
         let max_rig_level = 0;
         let rig_seen = 0;
         let pending_btc = 0;
-        let btc_price = GPU_MINING_BTC_PRICE_MIN;
+        let btc_price = 100000;
 
         let legacy_progress_steps = FileDataRead("Time BTC");
         if (legacy_progress_steps != undefined) {
-            progress_steps = Clamp(Round(legacy_progress_steps), 0, GPU_MINING_STEP_THRESHOLD);
+            progress_steps = Clamp(Round(legacy_progress_steps), 0, 162000);
         }
 
         let legacy_rig_level = FileDataRead("Rig level");
@@ -59,32 +49,32 @@ gpu_mining_initialize_state = func() {
 
         let legacy_btc_price = FileDataRead("btc price");
         if (legacy_btc_price != undefined) {
-            if (legacy_btc_price >= GPU_MINING_BTC_PRICE_MIN and legacy_btc_price <= GPU_MINING_BTC_PRICE_MAX) {
+            if (legacy_btc_price >= 100000 and legacy_btc_price <= 400000) {
                 btc_price = Round(legacy_btc_price);
             }
         }
 
-        FileDataWrite(GPU_MINING_PROGRESS_STEPS, progress_steps);
-        FileDataWrite(GPU_MINING_RIG_SEEN, rig_seen);
-        FileDataWrite(GPU_MINING_MAX_RIG_LEVEL, max_rig_level);
-        FileDataWrite(GPU_MINING_PENDING_BTC, pending_btc);
-        FileDataWrite(GPU_MINING_BTC_PRICE, btc_price);
-        FileDataWrite(GPU_MINING_STATE_VERSION, 1);
+        FileDataWrite("gpu_mining_3485717804_progress_steps", progress_steps);
+        FileDataWrite("gpu_mining_3485717804_rig_seen", rig_seen);
+        FileDataWrite("gpu_mining_3485717804_max_rig_level", max_rig_level);
+        FileDataWrite("gpu_mining_3485717804_pending_btc", pending_btc);
+        FileDataWrite("gpu_mining_3485717804_btc_price", btc_price);
+        FileDataWrite("gpu_mining_3485717804_state_version", 1);
     } else {
-        let progress_steps = FileDataRead(GPU_MINING_PROGRESS_STEPS);
+        let progress_steps = FileDataRead("gpu_mining_3485717804_progress_steps");
         if (progress_steps == undefined) {
             progress_steps = 0;
         }
-        progress_steps = Clamp(Round(progress_steps), 0, GPU_MINING_STEP_THRESHOLD);
-        FileDataWrite(GPU_MINING_PROGRESS_STEPS, progress_steps);
+        progress_steps = Clamp(Round(progress_steps), 0, 162000);
+        FileDataWrite("gpu_mining_3485717804_progress_steps", progress_steps);
 
-        let saved_rig_seen = FileDataRead(GPU_MINING_RIG_SEEN);
+        let saved_rig_seen = FileDataRead("gpu_mining_3485717804_rig_seen");
         let rig_seen = 0;
         if (saved_rig_seen == 1 or saved_rig_seen == true) {
             rig_seen = 1;
         }
 
-        let max_rig_level = FileDataRead(GPU_MINING_MAX_RIG_LEVEL);
+        let max_rig_level = FileDataRead("gpu_mining_3485717804_max_rig_level");
         if (max_rig_level == undefined) {
             max_rig_level = 0;
         }
@@ -92,31 +82,31 @@ gpu_mining_initialize_state = func() {
         if (max_rig_level > 0) {
             rig_seen = 1;
         }
-        FileDataWrite(GPU_MINING_RIG_SEEN, rig_seen);
-        FileDataWrite(GPU_MINING_MAX_RIG_LEVEL, max_rig_level);
+        FileDataWrite("gpu_mining_3485717804_rig_seen", rig_seen);
+        FileDataWrite("gpu_mining_3485717804_max_rig_level", max_rig_level);
 
-        let pending_btc = FileDataRead(GPU_MINING_PENDING_BTC);
+        let pending_btc = FileDataRead("gpu_mining_3485717804_pending_btc");
         if (pending_btc == undefined) {
             pending_btc = 0;
         }
         pending_btc = Clamp(Round(pending_btc), 0, 10);
-        FileDataWrite(GPU_MINING_PENDING_BTC, pending_btc);
+        FileDataWrite("gpu_mining_3485717804_pending_btc", pending_btc);
 
-        let btc_price = FileDataRead(GPU_MINING_BTC_PRICE);
+        let btc_price = FileDataRead("gpu_mining_3485717804_btc_price");
         if (btc_price == undefined) {
-            btc_price = GPU_MINING_BTC_PRICE_MIN;
+            btc_price = 100000;
         }
-        if (btc_price < GPU_MINING_BTC_PRICE_MIN or btc_price > GPU_MINING_BTC_PRICE_MAX) {
-            btc_price = GPU_MINING_BTC_PRICE_MIN;
+        if (btc_price < 100000 or btc_price > 400000) {
+            btc_price = 100000;
         }
         btc_price = Round(btc_price);
-        FileDataWrite(GPU_MINING_BTC_PRICE, btc_price);
+        FileDataWrite("gpu_mining_3485717804_btc_price", btc_price);
     }
-}
+});
 
 -- Detect the highest physical Rig currently visible to the documented
 -- inventory API, then update the historical maximum only upward.
-gpu_mining_sync_rig_state = func() {
+ScriptExpose("GpuMining3485717804SyncRigState", func() {
     let physical_level = 0;
     let physical_rig_found = 0;
     let level = 10;
@@ -131,11 +121,11 @@ gpu_mining_sync_rig_state = func() {
         level -= 1;
     }
 
-    let rig_seen = FileDataRead(GPU_MINING_RIG_SEEN);
-    let max_rig_level = FileDataRead(GPU_MINING_MAX_RIG_LEVEL);
+    let rig_seen = FileDataRead("gpu_mining_3485717804_rig_seen");
+    let max_rig_level = FileDataRead("gpu_mining_3485717804_max_rig_level");
 
     if (physical_rig_found == 1 and rig_seen != 1) {
-        FileDataWrite(GPU_MINING_RIG_SEEN, 1);
+        FileDataWrite("gpu_mining_3485717804_rig_seen", 1);
     }
     if (physical_rig_found == 1 and physical_level > max_rig_level) {
         -- As in the published upgrade check, return the superseded tier to
@@ -143,14 +133,14 @@ gpu_mining_sync_rig_state = func() {
         ItemSetSpriteInventory("miner_" + String(max_rig_level), "rig " + String(max_rig_level));
         ItemSetSpriteIngame("miner_" + String(max_rig_level), "rig " + String(max_rig_level));
         max_rig_level = physical_level;
-        FileDataWrite(GPU_MINING_MAX_RIG_LEVEL, max_rig_level);
+        FileDataWrite("gpu_mining_3485717804_max_rig_level", max_rig_level);
     }
 
     return max_rig_level;
-}
+});
 
 -- Find the temporary NPC used by the published NPC-to-chest workaround.
-gpu_mining_find_npc_instance = func(npc_name) {
+ScriptExpose("GpuMining3485717804FindNpcInstance", func(npc_name) {
     let hub_npcs = ObjectGetAllInstances(obj_npc_human_parent);
     while (ArrayLength(hub_npcs) > 0) {
         let current_npc = ArrayFirst(hub_npcs);
@@ -159,11 +149,11 @@ gpu_mining_find_npc_instance = func(npc_name) {
         }
         ArrayDelete(hub_npcs, 0, 1);
     }
-}
+});
 
--- FileData belongs to the loaded save, while init.script runs when the mod
--- first loads. State is therefore initialized per save from enter_hub (new
--- game, save load, raid return) and, as a fallback, by the worker.
+-- Canonical state is initialized and normalized from enter_hub (new game,
+-- save load, raid return) and, as a fallback, by the worker. This is
+-- idempotent and does not depend on when init.script runs relative to a save.
 
 -- Dedicated mining worker. The documented player_spawn event creates one for
 -- each room/player lifecycle; duplicate and lifetime behavior still requires
@@ -171,14 +161,16 @@ gpu_mining_find_npc_instance = func(npc_name) {
 ObjectCreate("gpu_mining_3485717804_worker");
 ObjectSetType("gpu_mining_3485717804_worker", "obj_mod_generic");
 ObjectSetScript("gpu_mining_3485717804_worker", "step_normal_event", func(_inst) {
-    if (FileDataRead(GPU_MINING_STATE_VERSION) == undefined) {
-        gpu_mining_initialize_state();
+    if (FileDataRead("gpu_mining_3485717804_state_version") == undefined) {
+        let initialize_state = ScriptGet("GpuMining3485717804InitializeState");
+        initialize_state();
     }
-    let active_mining_level = gpu_mining_sync_rig_state();
+    let sync_rig_state = ScriptGet("GpuMining3485717804SyncRigState");
+    let active_mining_level = sync_rig_state();
     if (active_mining_level > 0) {
-        let progress_steps = FileDataRead(GPU_MINING_PROGRESS_STEPS);
-        progress_steps = Clamp(progress_steps + 1, 0, GPU_MINING_STEP_THRESHOLD);
-        FileDataWrite(GPU_MINING_PROGRESS_STEPS, progress_steps);
+        let progress_steps = FileDataRead("gpu_mining_3485717804_progress_steps");
+        progress_steps = Clamp(progress_steps + 1, 0, 162000);
+        FileDataWrite("gpu_mining_3485717804_progress_steps", progress_steps);
     }
 });
 
@@ -189,26 +181,30 @@ EventAssignFunction("player_spawn", func() {
 -- Preserve the published Hub settlement and pending-clearing behavior until a
 -- reliable chest collection acknowledgement can be verified at runtime.
 EventAssignFunction("enter_hub", func() {
-    gpu_mining_initialize_state();
-    ItemSetPriceValue("btc", FileDataRead(GPU_MINING_BTC_PRICE));
+    let initialize_state = ScriptGet("GpuMining3485717804InitializeState");
+    let sync_rig_state = ScriptGet("GpuMining3485717804SyncRigState");
+    let find_npc_instance = ScriptGet("GpuMining3485717804FindNpcInstance");
 
-    let active_mining_level = gpu_mining_sync_rig_state();
-    let progress_steps = FileDataRead(GPU_MINING_PROGRESS_STEPS);
+    initialize_state();
+    ItemSetPriceValue("btc", FileDataRead("gpu_mining_3485717804_btc_price"));
 
-    if (progress_steps >= GPU_MINING_STEP_THRESHOLD) {
-        FileDataWrite(GPU_MINING_PENDING_BTC, active_mining_level);
-        FileDataWrite(GPU_MINING_PROGRESS_STEPS, 0);
+    let active_mining_level = sync_rig_state();
+    let progress_steps = FileDataRead("gpu_mining_3485717804_progress_steps");
 
-        let new_btc_price = Round(RandomRange(GPU_MINING_BTC_PRICE_MIN, GPU_MINING_BTC_PRICE_MAX));
-        FileDataWrite(GPU_MINING_BTC_PRICE, new_btc_price);
+    if (progress_steps >= 162000) {
+        FileDataWrite("gpu_mining_3485717804_pending_btc", active_mining_level);
+        FileDataWrite("gpu_mining_3485717804_progress_steps", 0);
+
+        let new_btc_price = Round(RandomRange(100000, 400000));
+        FileDataWrite("gpu_mining_3485717804_btc_price", new_btc_price);
         ItemSetPriceValue("btc", new_btc_price);
     }
-    if (progress_steps < GPU_MINING_STEP_THRESHOLD) {
-        FileDataWrite(GPU_MINING_PENDING_BTC, 0);
+    if (progress_steps < 162000) {
+        FileDataWrite("gpu_mining_3485717804_pending_btc", 0);
     }
 
-    if (FileDataRead(GPU_MINING_RIG_SEEN) == 1) {
-        if (gpu_mining_find_npc_instance("GPU Mining Rig") == undefined) {
+    if (FileDataRead("gpu_mining_3485717804_rig_seen") == 1) {
+        if (find_npc_instance("GPU Mining Rig") == undefined) {
             NpcSpawn("bitcoin_npc", 320, 900);
         }
         ObjectSpawn("btc_obj", 320, 900);
@@ -229,15 +225,16 @@ ObjectSetScript("btc_obj", "create_event", func(_inst) {
     _inst.kill_delay = 0;
     _inst.btc_inst = undefined;
 
-    let npc_inst = gpu_mining_find_npc_instance("GPU Mining Rig");
+    let find_npc_instance = ScriptGet("GpuMining3485717804FindNpcInstance");
+    let npc_inst = find_npc_instance("GPU Mining Rig");
     if (npc_inst != undefined) {
         _inst.btc_inst = npc_inst;
     }
 });
 
 ObjectSetScript("btc_obj", "step_normal_event", func(_inst) {
-    let pending_btc = FileDataRead(GPU_MINING_PENDING_BTC);
-    let max_rig_level = FileDataRead(GPU_MINING_MAX_RIG_LEVEL);
+    let pending_btc = FileDataRead("gpu_mining_3485717804_pending_btc");
+    let max_rig_level = FileDataRead("gpu_mining_3485717804_max_rig_level");
 
     if (pending_btc > 0 and max_rig_level > 0) {
         _inst.sprite_index = SpriteGet("rig chest " + String(max_rig_level) + " btc");
@@ -255,7 +252,8 @@ ObjectSetScript("btc_obj", "step_normal_event", func(_inst) {
     -- Retry the lookup if the NPC was not yet visible when this object was
     -- created, instead of leaving the reward handoff permanently stalled.
     if (_inst.btc_inst == undefined) {
-        let npc_inst = gpu_mining_find_npc_instance("GPU Mining Rig");
+        let find_npc_instance = ScriptGet("GpuMining3485717804FindNpcInstance");
+        let npc_inst = find_npc_instance("GPU Mining Rig");
         if (npc_inst != undefined) {
             _inst.btc_inst = npc_inst;
         }
